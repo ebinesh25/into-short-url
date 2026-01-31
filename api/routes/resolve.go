@@ -10,7 +10,7 @@ func ResolveURL(client *redis.Client) gin.HandlerFunc {
     return func(c *gin.Context) {
         short := c.Param("url")
 
-        val, err := client.Get(c, short).Result()
+        val, err := client.HGet(c, "shortenUrls", short).Result()
         if err != nil {
             c.JSON(http.StatusNotFound, gin.H{
                 "message": "Cannot Find the URL",
@@ -18,9 +18,6 @@ func ResolveURL(client *redis.Client) gin.HandlerFunc {
             return 
         }
 
-        c.JSON(http.StatusOK, gin.H{
-            "message": "Resolved URL",
-            "short":   val,
-        })
+        c.Redirect(http.StatusMovedPermanently, val)
     }
 }

@@ -18,7 +18,7 @@ func setupRoutes(r *gin.Engine, client *redis.Client){
 		})
 	})
 	
-	r.GET("/:url", routes.ResolveURL(client)
+	r.GET("/:url", routes.ResolveURL(client))
 	
 }
 
