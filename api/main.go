@@ -14,20 +14,24 @@ import (
 
 
 func setupRoutes(r *gin.Engine, client *redis.Client){
-	r.GET("/ping", func (c *gin.Context){
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
 	
-	
-	r.GET("/:url", func(c *gin.Context) {
-		url := c.Param("url")
+	r.GET("/*url", func(c *gin.Context) {
+		// Param will return the string WITH the leading slash (e.g., "/https://google.com")
+        // We trim the leading slash to get the clean URL
+        url := strings.TrimPrefix(c.Param("url"), "/")
 		
+        if (url == "ping") {
+	       	c.JSON(200, gin.H{
+				"message": "pong",
+			})
+        }
+        
 	   	if strings.HasPrefix(url, "http") {
-		    routes.ShortenURL(url, client)
+		    routes.ShortenURL(c, url, client)
+			return
 	   	} else {
-	  		routes.ResolveURL(client)
+	  		routes.ResolveURL(c, client, url)
+			return
 	   	}
 	})
 	
