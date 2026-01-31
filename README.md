@@ -34,7 +34,6 @@ api/
 
 ```bash
 cd api
-cp .env.example .env  # Configure Redis connection
 go run main.go
 ```
 
