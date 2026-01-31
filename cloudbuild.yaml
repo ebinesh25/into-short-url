@@ -38,3 +38,6 @@ steps:
 
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
