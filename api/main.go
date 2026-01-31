@@ -12,33 +12,32 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+func setupRoutes(r *gin.Engine, client *redis.Client) {
 
-func setupRoutes(r *gin.Engine, client *redis.Client){
-	
 	r.GET("/*url", func(c *gin.Context) {
 		// Param will return the string WITH the leading slash (e.g., "/https://google.com")
-        // We trim the leading slash to get the clean URL
-        url := strings.TrimPrefix(c.Param("url"), "/")
-		
-        if (url == "ping") {
-	       	c.JSON(200, gin.H{
+		// We trim the leading slash to get the clean URL
+		url := strings.TrimPrefix(c.Param("url"), "/")
+
+		if url == "ping" {
+			c.JSON(200, gin.H{
 				"message": "pong",
 			})
-        }
-        
-	   	if strings.HasPrefix(url, "http") {
-		    routes.ShortenURL(c, url, client)
+		}
+
+		if strings.HasPrefix(url, "http") {
+			routes.ShortenURL(c, url, client)
 			return
-	   	} else {
-	  		routes.ResolveURL(c, client, url)
+		} else {
+			routes.ResolveURL(c, client, url)
 			return
-	   	}
+		}
 	})
-	
+
 }
 
 func setupGin(client *redis.Client) *gin.Engine {
-	
+
 	r := gin.Default()
 	setupRoutes(r, client)
 	return r
@@ -47,24 +46,23 @@ func setupGin(client *redis.Client) *gin.Engine {
 func setupRedis() *redis.Client {
 	redisClient := database.InitRedis()
 	database.TestRedis(redisClient)
-	
+
 	return redisClient
 }
 
-func main(){
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println(err)
-	}
-	
-	port := os.Getenv("APP_PORT")
+func main() {
+	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	redis := setupRedis()
 	r := setupGin(redis)
+
+	fmt.Printf("Server starting on port %s...\n", port)
+
 	r.Run(":" + port)
-	
-	
+
 }
