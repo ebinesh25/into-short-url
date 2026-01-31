@@ -1,27 +1,40 @@
 steps:
-  # 1. Build using the Dockerfile inside your /api folder
+  # 1. Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/into-short-url', './api']
+    args:
+      [
+        'build',
+        '-t',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url',
+        './api'
+      ]
 
-  # 2. Push image to your project's registry
+  # 2. Push image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/into-short-url']
+    args:
+      [
+        'push',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url'
+      ]
 
   # 3. Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
-      - 'run'
-      - 'deploy'
-      - 'into-short-url-service' # This is the name of the service in Cloud Run
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/into-short-url'
-      - '--region'
-      - 'us-central1'
-      - '--allow-unauthenticated'
-      # Map the secret to your Go code's REDIS_STRING variable
-      - '--set-secrets'
-      - 'REDIS_STRING=REDIS_CONNECTION_STRING:latest'
+      [
+        'run',
+        'deploy',
+        'into-short-url',
+        '--image',
+        'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url',
+        '--region',
+        'asia-south1',
+        '--platform',
+        'managed',
+        '--allow-unauthenticated',
+        '--set-secrets',
+        'REDIS_STRING=REDIS_CONNECTION_STRING:latest'
+      ]
 
 images:
-  - 'gcr.io/$PROJECT_ID/into-short-url'
+  - 'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url'
