@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ebinesh25/intolink-golang/database"
 	"github.com/ebinesh25/intolink-golang/routes"
@@ -11,6 +12,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+
 func setupRoutes(r *gin.Engine, client *redis.Client){
 	r.GET("/ping", func (c *gin.Context){
 		c.JSON(200, gin.H{
@@ -18,16 +20,23 @@ func setupRoutes(r *gin.Engine, client *redis.Client){
 		})
 	})
 	
-	r.GET("/:url", routes.ResolveURL(client))
+	
+	r.GET("/:url", func(c *gin.Context) {
+		url := c.Param("url")
+		
+	   	if strings.HasPrefix(url, "http") {
+		    routes.ShortenURL(url, client)
+	   	} else {
+	  		routes.ResolveURL(client)
+	   	}
+	})
 	
 }
 
 func setupGin(client *redis.Client) *gin.Engine {
 	
 	r := gin.Default()
-	
 	setupRoutes(r, client)
-	
 	return r
 }
 

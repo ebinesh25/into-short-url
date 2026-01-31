@@ -14,3 +14,18 @@ func GetOriginalURL(
 
 	return client.HGet(ctx, "shortenUrls", short).Result()
 }
+
+func StoreShortUrl(
+    ctx context.Context,
+    client *redis.Client,
+    short string,
+    full string,
+) (string, error) {
+    
+    _, err := client.HSet(ctx, "shortenUrls", short, full).Result()
+    if err != nil {
+        return "", err
+    }
+    
+    return short, nil // Return the short string manually
+}
