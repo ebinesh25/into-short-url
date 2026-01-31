@@ -28,7 +28,8 @@ func ShortenURL(c *gin.Context, url string, client *redis.Client) {
 		return
 	}
 
-	c.String(http.StatusOK, urled)
+	const domain = "url.noskill.in/"
+	c.String(http.StatusOK, domain+urled)
 	// c.JSON(http.StatusOK, gin.H{
 	// 	"url": urled,
 	// })
