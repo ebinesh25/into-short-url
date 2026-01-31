@@ -1,0 +1,65 @@
+# ========================
+# Go build artifacts
+# ========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Binary output
+/bin/
+/dist/
+*.out
+
+# Go test files
+*.test
+*.prof
+
+# ========================
+# Go workspace & cache
+# ========================
+# (Usually not committed)
+go.work
+go.work.sum
+
+# Vendor (ignore ONLY if you don't vendor deps)
+# vendor/
+
+# ========================
+# Environment variables
+# ========================
+.env
+.env.*
+!.env.example
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+tmp/
+
+# ========================
+# OS / Editor junk
+# ========================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains (GoLand)
+.idea/
+
+# Vim
+*.swp
+*.swo
+
+# ========================
+# Gin specific / Hot reload
+# ========================
+air.toml
+.air.toml
+__debug_bin
