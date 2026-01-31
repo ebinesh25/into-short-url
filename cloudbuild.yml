@@ -1,0 +1,34 @@
+steps:
+  # Build the container from the /api folder
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/into-short-url', './api']
+
+  # Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/into-short-url']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'into-short-url'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/into-short-url'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+      # 1. Config variable (Port)
+      - '--set-env-vars'
+      - 'APP_PORT=${_APP_PORT}'
+      # 2. Secret variable (Redis URL)
+      - '--set-secrets'
+      - 'REDIS_STRING=REDIS_CONNECTION_STRING:latest'
+
+# Default values for variables
+substitutions:
+  _APP_PORT: '3125'
+
+images:
+  - 'gcr.io/$PROJECT_ID/into-short-url'
