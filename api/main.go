@@ -19,6 +19,11 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 		// We trim the leading slash to get the clean URL
 		url := strings.TrimPrefix(c.Param("url"), "/")
 
+		// Fix URLs with missing second slash after http:/ or https:/
+		// Gin treats // as path separator, so https://example.com becomes https:/example.com
+		url = strings.Replace(url, "http:/", "http://", 1)
+		url = strings.Replace(url, "https:/", "https://", 1)
+
 		// If there's a raw query string, append it to reconstruct URLs with query params
 		// e.g., "youtube.com/watch?v=xyz" where "?v=xyz" gets parsed as request query
 		if rawQuery := c.Request.URL.RawQuery; rawQuery != "" {
@@ -29,6 +34,7 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 			c.JSON(200, gin.H{
 				"message": "pong",
 			})
+			return
 		}
 
 		if strings.HasPrefix(url, "http") {
