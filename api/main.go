@@ -19,6 +19,12 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 		// We trim the leading slash to get the clean URL
 		url := strings.TrimPrefix(c.Param("url"), "/")
 
+		// If there's a raw query string, append it to reconstruct URLs with query params
+		// e.g., "youtube.com/watch?v=xyz" where "?v=xyz" gets parsed as request query
+		if rawQuery := c.Request.URL.RawQuery; rawQuery != "" {
+			url = url + "?" + rawQuery
+		}
+
 		if url == "ping" {
 			c.JSON(200, gin.H{
 				"message": "pong",
