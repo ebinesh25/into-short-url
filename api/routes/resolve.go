@@ -14,8 +14,11 @@ func ResolveURL(c *gin.Context, client *redis.Client, shortUrl string) {
         c.JSON(http.StatusNotFound, gin.H{
             "message": "Cannot Find the URL",
         })
-        return 
+        return
     }
+
+    // Increment the resolve counter
+    helpers.IncrementResolveCounter(c, client, shortUrl)
 
     c.Redirect(http.StatusMovedPermanently, val)
 }
