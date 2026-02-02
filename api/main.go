@@ -12,23 +12,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type ShortenRequest struct {
+	URL string `json:"url"`
+}
+
 func setupRoutes(r *gin.Engine, client *redis.Client) {
 
 	r.GET("/*url", func(c *gin.Context) {
 		// Param will return the string WITH the leading slash (e.g., "/https://google.com")
 		// We trim the leading slash to get the clean URL
+
 		url := strings.TrimPrefix(c.Param("url"), "/")
-
-		// Fix URLs with missing second slash after http:/ or https:/
-		// Gin treats // as path separator, so https://example.com becomes https:/example.com
-		url = strings.Replace(url, "http:/", "http://", 1)
-		url = strings.Replace(url, "https:/", "https://", 1)
-
-		// If there's a raw query string, append it to reconstruct URLs with query params
-		// e.g., "youtube.com/watch?v=xyz" where "?v=xyz" gets parsed as request query
-		if rawQuery := c.Request.URL.RawQuery; rawQuery != "" {
-			url = url + "?" + rawQuery
-		}
 
 		if url == "ping" {
 			c.JSON(200, gin.H{
@@ -38,7 +32,9 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 		}
 
 		if strings.HasPrefix(url, "http") {
-			routes.ShortenURL(c, url, client)
+			// render the html here
+			c.HTML(200, "redirect.html", nil)
+			// routes.ShortenURL(c, url, client)
 			return
 		} else {
 			routes.ResolveURL(c, client, url)
@@ -46,11 +42,27 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 		}
 	})
 
+	r.POST("/api/shorten", func(c *gin.Context) {
+
+		var req ShortenRequest
+
+		if err := c.BindJSON(&req); err != nil {
+			c.JSON(400, gin.H{
+				"error": "invalid JSON",
+			})
+			return
+		}
+
+		url := req.URL
+		routes.ShortenURL(c, url, client)
+	})
+
 }
 
 func setupGin(client *redis.Client) *gin.Engine {
 
 	r := gin.Default()
+	r.LoadHTMLGlob("templates/*")
 	setupRoutes(r, client)
 	return r
 }
