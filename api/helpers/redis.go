@@ -27,7 +27,23 @@ func StoreShortUrl(
         return "", err
     }
 
+    // Store reverse mapping for duplicate checking
+    _, err = client.HSet(ctx, "originalUrls", full, short).Result()
+    if err != nil {
+        return "", err
+    }
+
     return short, nil // Return the short string manually
+}
+
+// Check if original URL already exists and return its short URL
+func GetShortURLByOriginal(
+    ctx context.Context,
+    client *redis.Client,
+    originalURL string,
+) (string, error) {
+
+    return client.HGet(ctx, "originalUrls", originalURL).Result()
 }
 
 func IncrementResolveCounter(ctx context.Context, client *redis.Client, short string) error {

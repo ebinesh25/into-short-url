@@ -44,6 +44,14 @@ func genShortUrl() string {
 
 func GetShortURL(c context.Context, client *redis.Client, url string) (string, error) {
 
+	// Check if URL already exists
+	existingShortUrl, err := GetShortURLByOriginal(c, client, url)
+	if err == nil && existingShortUrl != "" {
+		// URL already exists, return the existing short URL
+		return existingShortUrl, nil
+	}
+
+	// Create new short URL
 	shortUrl := genShortUrl()
 	storedInDb, err := StoreShortUrl(c, client, shortUrl, url)
 	return storedInDb, err

@@ -48,11 +48,23 @@ func testSetupRoutes(r *gin.Engine, client RedisClient) {
 func testShortenURL(c *gin.Context, url string, client RedisClient) {
 	ctx := context.Background()
 
-	// Generate short code (simple hash for testing)
+	// Check if URL already exists (duplicate check)
+	cmd := client.HGet(ctx, "originalUrls", url)
+	existingShortCode, err := cmd.Result()
+
+	if err == nil && existingShortCode != "" {
+		// URL already exists, return the existing short URL
+		const domain = "url.noskill.in/"
+		c.String(http.StatusOK, domain+existingShortCode)
+		return
+	}
+
+	// Generate new short code (simple hash for testing)
 	shortCode := "test_" + url[:5]
 
-	// Store in Redis
-	client.HSet(ctx, "urls", shortCode, url)
+	// Store both forward and reverse mappings
+	client.HSet(ctx, "shortenUrls", shortCode, url)
+	client.HSet(ctx, "originalUrls", url, shortCode)
 
 	const domain = "url.noskill.in/"
 	c.String(http.StatusOK, domain+shortCode)
@@ -114,6 +126,12 @@ func TestURLWithQueryParams(t *testing.T) {
 			expectedStored: "https://youtube.com/watch?t=10s&list=PLxyz&index=5",
 			description:    "URL with multiple query params including encoded values",
 		},
+		{
+			name:           "sendHugs URl",
+			inputURL:       "https://send-hugss.netlify.app/view#YqkeDwbApRL8XJo-dkOrE9UGfMMlyq6BGWFaZOv8mpgLIOpw4AAFW2IUnvbcxxpCL6WyZHRQedh9GlW5yFfRoELpTRiKQ3ifXUJuy47UaFzb7jkJlxq9eTv7-Ltp3pVRJjB93gN1YYJUSohtnc9EzT-b7uqh3Wd1F1bx7UyJfsOopugx5-CMY3GK01UVQN1jbM7QGBXzQvvZpMQ218ePvv-YpQusgU75Hs1ZhRrEZx9A0zHYUjVwABVI5IYifaKZJn1JLBmnCw50CXGwo2jM8ok-neL9YPsYXBfmMCug8XdV1UnYc6-odQtH78jsQabVdwqHo3Eg1cTXEKYfyyYAFci52D7E414.hhzajGlHkuJDjWCn6VCqFHbRHaCNHo2arNwovQ4dXkc",
+			expectedStored: "https://send-hugss.netlify.app/view#YqkeDwbApRL8XJo-dkOrE9UGfMMlyq6BGWFaZOv8mpgLIOpw4AAFW2IUnvbcxxpCL6WyZHRQedh9GlW5yFfRoELpTRiKQ3ifXUJuy47UaFzb7jkJlxq9eTv7-Ltp3pVRJjB93gN1YYJUSohtnc9EzT-b7uqh3Wd1F1bx7UyJfsOopugx5-CMY3GK01UVQN1jbM7QGBXzQvvZpMQ218ePvv-YpQusgU75Hs1ZhRrEZx9A0zHYUjVwABVI5IYifaKZJn1JLBmnCw50CXGwo2jM8ok-neL9YPsYXBfmMCug8XdV1UnYc6-odQtH78jsQabVdwqHo3Eg1cTXEKYfyyYAFci52D7E414.hhzajGlHkuJDjWCn6VCqFHbRHaCNHo2arNwovQ4dXkc",
+			description:    "URL that has # in the end",
+		},
 	}
 
 	for _, tt := range tests {
@@ -150,6 +168,99 @@ func TestURLWithQueryParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestURLForDuplication verifies that submitting the same URL twice
+// returns the same short URL instead of creating a new one.
+func TestURLForDuplication(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("Check Duplicate URL returns same short code", func(t *testing.T) {
+		mockRedis := createMockRedis()
+		router := gin.New()
+		testSetupRoutes(router, mockRedis)
+
+		// The URL to shorten
+		testURL := "https://www.helloworld.io"
+		const domain = "url.noskill.in/"
+
+		// First request: create a new short URL
+		req1 := httptest.NewRequest("GET", "/"+testURL, nil)
+		w1 := httptest.NewRecorder()
+		router.ServeHTTP(w1, req1)
+
+		// Verify first request was successful
+		if w1.Code != http.StatusOK {
+			t.Errorf("First request: Expected status OK, got %d", w1.Code)
+		}
+
+		firstResponse := w1.Body.String()
+		if !strings.HasPrefix(firstResponse, domain) {
+			t.Errorf("First response should start with '%s', got: %s", domain, firstResponse)
+		}
+
+		// Extract the short code from the first response
+		firstShortCode := strings.TrimPrefix(firstResponse, domain)
+
+		// Second request: try to shorten the same URL again
+		req2 := httptest.NewRequest("GET", "/"+testURL, nil)
+		w2 := httptest.NewRecorder()
+		router.ServeHTTP(w2, req2)
+
+		// Verify second request was successful
+		if w2.Code != http.StatusOK {
+			t.Errorf("Second request: Expected status OK, got %d", w2.Code)
+		}
+
+		secondResponse := w2.Body.String()
+
+		// The second response should be the SAME short code as the first
+		secondShortCode := strings.TrimPrefix(secondResponse, domain)
+
+		if secondShortCode != firstShortCode {
+			t.Errorf("Duplicate URL should return same short code:\nFirst:  %s\nSecond: %s", firstShortCode, secondShortCode)
+		}
+
+		// Verify only one entry exists in storage (no duplicate created)
+		// We need to count how many different URLs were stored
+		storedCount := len(mockRedis.storage)
+		if storedCount != 1 {
+			t.Errorf("Expected exactly 1 entry in storage, got %d", storedCount)
+		}
+	})
+
+	t.Run("Different URLs create different short codes", func(t *testing.T) {
+		mockRedis := createMockRedis()
+		router := gin.New()
+		testSetupRoutes(router, mockRedis)
+
+		const domain = "url.noskill.in/"
+
+		// First URL
+		url1 := "https://www.example.com"
+		req1 := httptest.NewRequest("GET", "/"+url1, nil)
+		w1 := httptest.NewRecorder()
+		router.ServeHTTP(w1, req1)
+
+		// Second URL (different)
+		url2 := "https://www.different.com"
+		req2 := httptest.NewRequest("GET", "/"+url2, nil)
+		w2 := httptest.NewRecorder()
+		router.ServeHTTP(w2, req2)
+
+		// Both should be successful
+		if w1.Code != http.StatusOK || w2.Code != http.StatusOK {
+			t.Errorf("Both requests should succeed")
+		}
+
+		short1 := strings.TrimPrefix(w1.Body.String(), domain)
+		short2 := strings.TrimPrefix(w2.Body.String(), domain)
+
+		// Short codes should be different
+		if short1 == short2 {
+			t.Errorf("Different URLs should produce different short codes, got same: %s", short1)
+		}
+	})
 }
 
 // TestShortCodeResolution verifies that a short code redirects
@@ -203,14 +314,16 @@ func TestPingEndpoint(t *testing.T) {
 	}
 }
 
-// MockRedisClient is a simple mock for testing
+// MockRedisClient is a simple mock for testing with reverse lookup support
 type MockRedisClient struct {
-	storage map[string]string
+	storage      map[string]string // short -> original URL (for "shortenUrls" hash)
+	reverseIndex map[string]string // original URL -> short (for "originalUrls" hash)
 }
 
 func createMockRedis() *MockRedisClient {
 	return &MockRedisClient{
-		storage: make(map[string]string),
+		storage:      make(map[string]string),
+		reverseIndex: make(map[string]string),
 	}
 }
 
@@ -218,19 +331,38 @@ func createMockRedis() *MockRedisClient {
 func (m *MockRedisClient) HGet(ctx context.Context, key, field string) *redis.StringCmd {
 	// Return a mock command with the stored value
 	cmd := redis.NewStringCmd(ctx)
-	if val, ok := m.storage[field]; ok {
-		cmd.SetVal(val)
+
+	// Check which hash is being accessed
+	if key == "shortenUrls" || key == "urls" {
+		// Forward lookup: short -> original URL
+		if val, ok := m.storage[field]; ok {
+			cmd.SetVal(val)
+		}
+	} else if key == "originalUrls" {
+		// Reverse lookup: original URL -> short
+		if val, ok := m.reverseIndex[field]; ok {
+			cmd.SetVal(val)
+		}
 	}
+
 	return cmd
 }
 
 func (m *MockRedisClient) HSet(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
-	// Store the short -> URL mapping
+	// Store based on which hash is being accessed
 	if len(values) >= 2 {
-		short := values[0].(string)
-		full := values[1].(string)
-		m.storage[short] = full
+		field := values[0].(string)
+		value := values[1].(string)
+
+		if key == "shortenUrls" || key == "urls" {
+			// Store short -> original URL
+			m.storage[field] = value
+		} else if key == "originalUrls" {
+			// Store original URL -> short (reverse mapping)
+			m.reverseIndex[field] = value
+		}
 	}
+
 	cmd := redis.NewIntCmd(ctx)
 	cmd.SetVal(1)
 	return cmd
@@ -238,7 +370,8 @@ func (m *MockRedisClient) HSet(ctx context.Context, key string, values ...interf
 
 // Helper methods for testing
 func (m *MockRedisClient) StoreURL(short, full string) {
-	m.storage[short] = full
+	m.storage[short] = full           // For "shortenUrls" hash
+	m.reverseIndex[full] = short      // For "originalUrls" hash
 }
 
 func (m *MockRedisClient) GetStoredURL(short string) string {
