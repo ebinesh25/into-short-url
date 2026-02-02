@@ -16,6 +16,7 @@ RUN go build -o server main.go
 FROM alpine:3.18
 WORKDIR /root/
 COPY --from=builder /app/server .
+COPY --from=builder /app/templates ./templates
 
 # Cloud Run expects the app to listen on the PORT env var
 EXPOSE 8080
