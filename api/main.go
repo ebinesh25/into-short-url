@@ -23,6 +23,8 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 		// We trim the leading slash to get the clean URL
 
 		url := strings.TrimPrefix(c.Param("url"), "/")
+		url = strings.Replace(url, "http:/", "http://", 1)
+		url = strings.Replace(url, "https:/", "https://", 1)
 
 		if url == "ping" {
 			c.JSON(200, gin.H{
