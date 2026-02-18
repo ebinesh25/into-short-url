@@ -16,6 +16,12 @@
             margin: 0;
         }
 
+        .container {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
         #url-id {
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             background-color: #010409;
@@ -29,19 +35,93 @@
             text-align: center;
         }
 
+        .copy-btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #c9d1d9;
+            cursor: pointer;
+            padding: 0 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .copy-btn:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        .copy-btn:active {
+            background-color: #282e33;
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f6feb;
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
     </style>
 </head>
 <body>
 
-        <p id="url-id">Fetching data...</p>
+        <div class="container">
+            <p id="url-id">Fetching data...</p>
+            <button class="copy-btn" id="copy-btn" aria-label="Copy to clipboard">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="tooltip" id="tooltip">Copied!</span>
+            </button>
+        </div>
 
 <script>
+
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const tooltip = document.getElementById('tooltip');
+        tooltip.classList.add('show');
+        setTimeout(() => {
+            tooltip.classList.remove('show');
+        }, 2000);
+    } catch (err) {
+        console.error("Failed to copy:", err);
+    }
+}
 
 async function getData() {
     const fullUrl = window.location.href;
     const base = window.location.origin + "/";
     const target = fullUrl.replace(base, "");
-    
+
     try {
         const response = await fetch("/api/shorten", {
             method: "POST",
@@ -53,7 +133,7 @@ async function getData() {
 
         const data = await response.text();
         const elem = document.getElementById('url-id');
-        
+
         if (elem) {
             elem.innerText = data;
         }
@@ -66,6 +146,15 @@ async function getData() {
 
 window.addEventListener('DOMContentLoaded', () => {
     getData();
+
+    // Handle manual copy button click
+    const copyBtn = document.getElementById('copy-btn');
+    copyBtn.addEventListener('click', () => {
+        const urlText = document.getElementById('url-id').innerText;
+        if (urlText && urlText !== "Fetching data..." && !urlText.startsWith("Error:")) {
+            copyToClipboard(urlText);
+        }
+    });
 });
 </script>
 </body>
