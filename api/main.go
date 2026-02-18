@@ -7,6 +7,7 @@ import (
 
 	"github.com/ebinesh25/intolink-golang/database"
 	"github.com/ebinesh25/intolink-golang/routes"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
@@ -64,6 +65,15 @@ func setupRoutes(r *gin.Engine, client *redis.Client) {
 func setupGin(client *redis.Client) *gin.Engine {
 
 	r := gin.Default()
+
+	// Configure CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"https://send-huggs.netlify.app", "http://localhost:*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
+
 	r.LoadHTMLGlob("templates/*")
 	setupRoutes(r, client)
 	return r
