@@ -68,7 +68,7 @@ func setupGin(client *redis.Client) *gin.Engine {
 
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://send-huggs.netlify.app", "http://localhost:*"},
+		AllowOrigins:     []string{"https://send-hugss.netlify.app"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
