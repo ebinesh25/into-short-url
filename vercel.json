@@ -1,0 +1,5 @@
+{
+  "buildCommand": "go build -o server ./api",
+  "installCommand": "go mod download",
+  "outputDirectory": "."
+}

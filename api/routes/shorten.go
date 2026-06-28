@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ebinesh25/intolink-golang/helpers"
+	"github.com/ebinesh25/intolink-golang/api/helpers"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )

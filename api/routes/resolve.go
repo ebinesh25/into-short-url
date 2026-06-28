@@ -4,7 +4,7 @@ import (
     "net/http"
     "github.com/gin-gonic/gin"
     "github.com/redis/go-redis/v9"
-    "github.com/ebinesh25/intolink-golang/helpers"
+    "github.com/ebinesh25/intolink-golang/api/helpers"
 )
 
 func ResolveURL(c *gin.Context, client *redis.Client, shortUrl string) {

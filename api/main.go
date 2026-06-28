@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ebinesh25/intolink-golang/database"
-	"github.com/ebinesh25/intolink-golang/routes"
+	"github.com/ebinesh25/intolink-golang/api/database"
+	"github.com/ebinesh25/intolink-golang/api/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
