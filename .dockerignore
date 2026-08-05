@@ -1,0 +1,8 @@
+.git
+.gitignore
+.vercel
+.env
+*.md
+cloudbuild.yaml
+compose.yaml
+api

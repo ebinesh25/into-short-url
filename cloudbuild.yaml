@@ -6,7 +6,7 @@ steps:
         'build',
         '-t',
         'asia-south1-docker.pkg.dev/$PROJECT_ID/intolink/into-short-url',
-        './api'
+        '.'
       ]
 
   # 2. Push image to Artifact Registry
