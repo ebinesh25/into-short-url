@@ -4,7 +4,7 @@ A simple URL shortener service built with Go and Gin framework. Append any URL t
 
 ## How It Works
 
-1. **Shorten a URL**: Visit `intolink.site/https://long-url-site.com`
+1. **Shorten a URL**: Visit `url.noskill.in/https://long-url-site.com`
 2. **Get short code**: Returns a shortened URL like `intolink.site/suwodj`
 3. **Redirect**: Visiting the short URL redirects to the original long URL
 
